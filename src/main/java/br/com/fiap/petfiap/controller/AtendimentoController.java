@@ -82,13 +82,13 @@ public class AtendimentoController {
 
     // POST /api/atendimentos/{id}/conclusao - Concluir atendimento
     @PostMapping("/{id}/conclusao")
-    public ResponseEntity<Atendimento> concluir(@PathVariable Long id) {
+    public ResponseEntity<?> concluir(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(service.concluir(id));
         } catch (AtendimentoNaoEncontradoException e) {
             return ResponseEntity.notFound().build();
         } catch (StatusInvalidoException e) {
-            return ResponseEntity.status(409).build();
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }
     }
 

@@ -2,6 +2,7 @@ package br.com.fiap.petfiap.service;
 
 import br.com.fiap.petfiap.exception.AtendimentoNaoEncontradoException;
 import br.com.fiap.petfiap.exception.HorarioOcupadoException;
+import br.com.fiap.petfiap.exception.StatusInvalidoException;
 import br.com.fiap.petfiap.model.Atendimento;
 import br.com.fiap.petfiap.repository.AtendimentoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,11 @@ public class AgendaService {
     // Conclui o atendimento (status AGENDADO -> CONCLUIDO).
     public Atendimento concluir(Long id) {
         Atendimento atendimento = buscarPorId(id);
-        atendimento.concluir();
+        if (!"AGENDADO".equalsIgnoreCase(atendimento.getStatus())) {
+            throw new StatusInvalidoException("Nao e possivel concluir um atendimento com status: " + atendimento.getStatus());
+        }
+
+        atendimento.setStatus("CONCLUIDO");
         return repository.save(atendimento);
     }
 
