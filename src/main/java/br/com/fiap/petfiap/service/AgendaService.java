@@ -56,10 +56,12 @@ public class AgendaService {
         return repository.save(atendimento);
     }
 
-    // Cancela o atendimento (status AGENDADO -> CANCELADO).
     public Atendimento cancelar(Long id) {
         Atendimento atendimento = buscarPorId(id);
-        atendimento.cancelar();
+        if ("CONCLUIDO".equalsIgnoreCase(atendimento.getStatus()) || "CANCELADO".equalsIgnoreCase(atendimento.getStatus())) {
+            throw new StatusInvalidoException("Nao e possivel cancelar um atendimento com status: " + atendimento.getStatus());
+        }
+        atendimento.setStatus("CANCELADO");
         return repository.save(atendimento);
     }
 

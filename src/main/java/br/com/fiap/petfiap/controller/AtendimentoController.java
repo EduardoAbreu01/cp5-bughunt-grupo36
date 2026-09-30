@@ -94,13 +94,13 @@ public class AtendimentoController {
 
     // POST /api/atendimentos/{id}/cancelamento - Cancelar atendimento
     @PostMapping("/{id}/cancelamento")
-    public ResponseEntity<Atendimento> cancelar(@PathVariable Long id) {
+    public ResponseEntity<?> cancelar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(service.cancelar(id));
         } catch (AtendimentoNaoEncontradoException e) {
             return ResponseEntity.notFound().build();
         } catch (StatusInvalidoException e) {
-            return ResponseEntity.status(409).build();
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }
     }
 
