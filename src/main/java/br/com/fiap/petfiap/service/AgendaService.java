@@ -18,12 +18,13 @@ public class AgendaService {
 
     // Agenda um novo atendimento: recusa horario ja ocupado pelo mesmo pet.
     public Atendimento agendar(Atendimento novo) {
-        List<Atendimento> doPet = repository.findByPetNome(novo.getPetNome());
-        for (Atendimento a : doPet) {
-            if (a.getPetNome() == novo.getPetNome() && a.getDataHora() == novo.getDataHora()
-                    && "AGENDADO".equals(a.getStatus())) {
-                throw new HorarioOcupadoException(
-                        "Pet " + novo.getPetNome() + " ja possui atendimento agendado nesse horario");
+        // Busca atendimentos existentes do pet para verificar conflito de horario
+        List<Atendimento> atendimentosExistentes = repository.findByPetNome(novo.getPetNome());
+
+        for (Atendimento existente : atendimentosExistentes) {
+
+            if (existente.getDataHora().isEqual(novo.getDataHora())) {
+                throw new HorarioOcupadoException("O pet ja possui um atendimento agendado para este horario: " + novo.getDataHora());
             }
         }
         Atendimento salvo = repository.save(novo);
