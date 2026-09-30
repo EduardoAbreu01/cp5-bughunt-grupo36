@@ -26,7 +26,7 @@ public class AtendimentoController {
     // POST /api/atendimentos?tutorNome=Ana - Agendar atendimento
     // Ex.: POST "/api/atendimentos?tipo=BANHO&petNome=Rex&porte=PEQUENO&tutorNome=Ana&dataHora=2026-10-01T10:00"
     @PostMapping
-    public ResponseEntity<Atendimento> agendar(
+    public ResponseEntity<?> agendar(
             @RequestParam String tipo,
             @RequestParam String petNome,
             @RequestParam String porte,
@@ -42,9 +42,10 @@ public class AtendimentoController {
                     .construir(protocolo);
             return ResponseEntity.status(201).body(service.agendar(atendimento));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         } catch (HorarioOcupadoException e) {
-            return ResponseEntity.status(409).build();
+            return ResponseEntity.status(409).body(Map.of("erro", e.getMessage()));
         }
     }
 
