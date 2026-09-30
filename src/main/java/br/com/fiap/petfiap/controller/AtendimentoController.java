@@ -51,11 +51,11 @@ public class AtendimentoController {
 
     // GET /api/atendimentos/{id} - Buscar por id
     @GetMapping("/{id}")
-    public ResponseEntity<Atendimento> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> buscarPorId( @PathVariable Long id) {
         try {
             return ResponseEntity.ok(service.buscarPorId(id));
         } catch (AtendimentoNaoEncontradoException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("erro", e.getMessage()));
         }
     }
 
@@ -67,7 +67,7 @@ public class AtendimentoController {
 
     // GET /api/atendimentos/{id}/resumo - Preco, pontos e duracao (polimorfismo na pratica)
     @GetMapping("/{id}/resumo")
-    public ResponseEntity<Map<String, Object>> resumo(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> resumo(@PathVariable  Long id) {
         try {
             Atendimento atendimento = service.buscarPorId(id);
             return ResponseEntity.ok(Map.of(
