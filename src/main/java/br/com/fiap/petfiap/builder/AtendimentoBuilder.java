@@ -42,6 +42,9 @@ public class AtendimentoBuilder {
         if (this.petNome == null || this.petNome.trim().isEmpty()) {
             throw new IllegalArgumentException("Nome do pet e obrigatorio");
         }
+        if (this.petPorte == null || this.petPorte.trim().isEmpty()) {
+            throw new IllegalArgumentException("Porte do pet e obrigatorio");
+        }
         return AtendimentoFactory.criar(protocolo, tipo, petNome, petPorte, tutorNome, dataHora);
     }
 }
