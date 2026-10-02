@@ -110,4 +110,22 @@ public class AgendaServiceTest {
         // Act + Assert
         assertThrows(AtendimentoNaoEncontradoException.class, () -> service.buscarPorId(99L));
     }
+
+    @Test
+    public void deveAgendarQuandoAtendimentoNoMesmoHorarioFoiCancelado() {
+        // Arrange: o Rex tinha banho amanha as 10h, mas foi cancelado
+        Banho cancelado = banhoDoRexAmanha10h();
+        cancelado.cancelar();
+        when(repository.findByPetNome("Rex")).thenReturn(List.of(cancelado));
+
+        Banho novo = new Banho(2, "Rex", "PEQUENO", "Ana", cancelado.getDataHora());
+        when(repository.save(novo)).thenReturn(novo);
+
+        // Act
+        Atendimento salvo = service.agendar(novo);
+
+        // Assert: horario cancelado fica livre de novo
+        assertEquals("AGENDADO", salvo.getStatus());
+        verify(repository).save(novo);
+    }
 }
