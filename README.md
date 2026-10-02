@@ -9,10 +9,9 @@
 
 | Integrante | RM | Turma |
 |---|---|---|
-| | | |
-| | | |
-| | | |
-| | | |
+| Eduardo Abreu | 566460 | 2CCPO |
+| Gabriel dos Anjos | 565532 | 2CCPO |
+| João Pedro Ferreira | 563869 | 2CCPO |
 
 | Campo | |
 |---|---|
@@ -30,7 +29,7 @@
 
 | # | Sintoma observado (o que fiz/vi) | Causa raiz (arquivo e linha aproximada) | Correção aplicada | Conceito da disciplina |
 |---|---|---|---|---|
-| bug01 |Erro IdentifierGenerationException ao tentar salvar atendimento na API (ou PSQLException de coluna id nula no banco).    |Atendimento.java (linha ~14): O atributo id continha apenas a anotação @Id, sem declarar a estratégia de geração automática de chave primária (@GeneratedValue).    |Adicionada a anotação @GeneratedValue(strategy = GenerationType.IDENTITY) no atributo id de Atendimento.java e atualizada a coluna id no PostgreSQL para suportar IDENTITY |Mapeamento Objeto-Relacional (ORM) com JPA, Estratégias de Geração de Chaves Primárias (@GeneratedValue) e persistência relacional. |
+| bug01 |Erro IdentifierGenerationException ao tentar salvar atendimento na API (ou erro de id nulo ao inserir no Oracle).    |Atendimento.java (linha ~14): O atributo id continha apenas a anotação @Id, sem declarar a estratégia de geração automática de chave primária (@GeneratedValue).    |Adicionada a anotação @GeneratedValue(strategy = GenerationType.IDENTITY) no atributo id de Atendimento.java, assim o Oracle gera o id como coluna IDENTITY |Mapeamento Objeto-Relacional (ORM) com JPA, Estratégias de Geração de Chaves Primárias (@GeneratedValue) e persistência relacional. |
 | bug02 |O protocolo ficava preso no valor 1 a cada novo agendamento e o teste deveGerarProtocolosSequenciais falhava. |GeradorProtocolo.java (linha ~19): getInstancia() instanciava um novo objeto sem guardar na variável instancia, fazendo o atributo contador reiniciar em cada chamada. |Atribuir instancia = new GeradorProtocolo() no método estático para manter o estado do contador em memória |Padrão Singleton, Estado de Objetos e Encapsulamento |
 | bug03 |O nome do pet era salvo como null no banco e os testes de montagem do builder deveMontarAtendimentoCompleto falhava. |AtendimentoBuilder.java: No método comPet(), a variável this.petNome não recebia o parâmetro petNome por falta do qualificador this (petNome = petNome). |Adicionado o this.petNome = petNome para atribuir corretamente o valor ao atributo da classe. |Encapsulamento, Escopo de Variáveis e Padrão Builder . |
 | bug04 |O teste deveRecusarMontagemSemNomeDoPet falhava porque nenhuma exceção era lançada ao montar sem o nome do pet. |AtendimentoBuilder.java: O método construir() delegava as validações ao controller e não verificava o parâmetro petNome. |Adicionada a validação if (petNome == null || petNome.trim().isEmpty()) lançando IllegalArgumentException. |Padrão Builder e Validação de Argumentos . |
