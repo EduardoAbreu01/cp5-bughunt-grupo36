@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,5 +128,18 @@ public class AgendaServiceTest {
         // Assert: horario cancelado fica livre de novo
         assertEquals("AGENDADO", salvo.getStatus());
         verify(repository).save(novo);
+    }
+
+    @Test
+    public void deveRecusarAgendamentoQuandoDataHoraEstaNoPassado() {
+        // Arrange: ontem
+        Banho noPassado = new Banho(1, "Rex", "PEQUENO", "Ana", LocalDateTime.now().minusDays(1));
+
+        // Act + Assert
+        assertThrows(IllegalArgumentException.class, () -> service.agendar(noPassado));
+
+        // Recusa antes de ir no banco
+        verify(repository, never()).findByPetNome(anyString());
+        verify(repository, never()).save(any());
     }
 }
