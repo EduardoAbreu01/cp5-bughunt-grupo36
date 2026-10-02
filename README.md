@@ -16,10 +16,10 @@
 
 | Campo | |
 |---|---|
-| **Total de bugs corrigidos** | 12 / 12 |
-| **Total de ajustes de Clean Code** | ___ / 6 |
-| **Total de testes novos escritos** | ___ / 6 |
-| **Suíte final (Run As → JUnit Test)** | ___ testes, ___ falhas |
+| **Total de bugs corrigidos** | 16 / 12 (ver Parte 5) |
+| **Total de ajustes de Clean Code** | 6 / 6 |
+| **Total de testes novos escritos** | 6 / 6 |
+| **Suíte final (Run As → JUnit Test)** | 26 testes (20 entregues + 6 novos), 0 falhas |
 
 ---
 
@@ -42,17 +42,21 @@
 | bug10 |A aplicação aceitava agendamentos com data e hora passadas e o teste unitário correspondente falhava. |AgendaService.java: O método agendar() não validava se dataHora era anterior a LocalDateTime.now() antes de acionar o repositório |Adicionada a validação if (dataHora.isBefore(LocalDateTime.now())) lançando IllegalArgumentException. |Validação de Regras de Negócio, Tratamento de Exceções e Manipulação de Datas (java.time). |
 | bug11 |Ausência de validação do status atual do atendimento ao tentar concluir (permitindo alterar atendimentos já cancelados ou concluídos). |AgendaService.java: O método concluir() alterava o status diretamente para CONCLUIDO sem verificar o estado anterior do objeto. |Adicionada a validação no método concluir() lançando StatusInvalidoException caso o status do atendimento seja diferente de AGENDADO. |Máquina de Estados, Validação de Transição de Status e Exceções de Negócio no Spring Boot. |
 | bug12 |A aplicação permitia o cancelamento de atendimentos já concluídos (CONCLUIDO). |AgendaService.java: O método cancelar() alterava o status para "CANCELADO" sem verificar se o atendimento já havia sido realizado. |Adicionada a validação no método cancelar() lançando StatusInvalidoException caso o status atual seja CONCLUIDO ou CANCELADO. |Máquina de Estados, Integridade de Regras de Negócio e Exceções Customizadas. |
+| bug13 |O teste novo teste01 (BanhoTest) ficou vermelho: `expected: <60.0> but was: <100.0>`. Banho de pet pequeno estava saindo pelo preço do grande. |Banho.java, `calcularPreco()` (linha ~27): os valores de PEQUENO e GRANDE estavam trocados (100 para pequeno e 60 no retorno padrão, que é o grande). |Troquei os retornos: PEQUENO = 60, MEDIO = 80, GRANDE = 100, conforme a tabela do contrato. |Polimorfismo (regra de preço sobrescrita em cada subclasse) e testes unitários revelando bug escondido. |
+| bug14 |O teste novo teste02 (TosaTest) ficou vermelho: `expected: <60> but was: <30>`. O /resumo de uma tosa mostrava 30 minutos. |Tosa.java (linha ~40): o método era `getDuracaoMinutos(String porte)`, com parâmetro. Isso é uma sobrecarga, então quem chama `getDuracaoMinutos()` pelo tipo Atendimento cai no método da classe pai (30). |Tirei o parâmetro e coloquei `@Override`, agora é sobrescrita de verdade e retorna 60. |Sobrescrita vs sobrecarga, anotação @Override, polimorfismo. |
+| bug15 |O teste novo teste03 (BanhoTest) ficou vermelho: chamar `cancelar()` num atendimento CONCLUIDO não lançava nada e o status virava CANCELADO. |Atendimento.java, `cancelar()` (linha ~67): mudava o status direto sem olhar o estado atual. O bug12 só tinha tapado isso no service, o model continuava aceitando. |Coloquei a mesma checagem do `concluir()`: só cancela se estiver AGENDADO, senão lança StatusInvalidoException. |Encapsulamento (regra de transição de status mora no model) e exceções customizadas unchecked. |
+| bug16 |O teste novo teste04 (AgendaServiceTest) ficou vermelho com HorarioOcupadoException: um banho CANCELADO no mesmo horário impedia agendar de novo. |AgendaService.java, `agendar()` (linha ~31): na correção do bug09 a checagem do status AGENDADO acabou saindo junto com o `==`, então qualquer atendimento no horário bloqueava. |Voltei a condição de status: só conflita se o atendimento existente estiver AGENDADO e a data/hora for igual (`isEqual`). |Regras de negócio no service, teste de regressão. |
 
 ## Parte 2 — Ajustes de Clean Code
 
 | # | Onde estava | Qual princípio/boas práticas era violado | O que eu mudei |
 |---|---|---|---|
-| clean01 | | | |
-| clean02 | | | |
-| clean03 | | | |
-| clean04 | | | |
-| clean05 | | | |
-| clean06 | | | |
+| clean01 | AtendimentoFactory.java, método `criar(int p, String t, String n, String po, String tu, LocalDateTime d)` | Nomes significativos: parâmetro de uma letra não diz nada, `po` e `tu` dava pra confundir fácil | Renomeei para `protocolo, tipo, petNome, petPorte, tutorNome, dataHora` |
+| clean02 | AtendimentoController.java, método privado `calcularDescontoFidelidade` | Código morto / YAGNI: método que ninguém chama, com comentário de "implementar no futuro" | Removi o método e o comentário. Se o time aprovar a regra, ela entra com teste |
+| clean03 | AtendimentoBuilder.java, comentário em cima do `construir()` | Comentário mentiroso: dizia que a validação ficava no controller, mas depois dos bugs 04/05 ela está no próprio builder | Troquei por um comentário curto que diz o que o método faz de verdade |
+| clean04 | AgendaService.java, `concluir()` e `cancelar()` | DRY / encapsulamento: o service repetia a regra de status com `setStatus` em vez de usar os métodos do model, então a regra existia em dois lugares | O service agora só chama `atendimento.concluir()` / `atendimento.cancelar()`; a regra fica só no model |
+| clean05 | Atendimento.java e AgendaService.java, strings `"AGENDADO"`, `"CONCLUIDO"`, `"CANCELADO"` espalhadas | Números/strings mágicas: um erro de digitação compila normal e quebra a regra | Criei as constantes `AGENDADO`, `CONCLUIDO` e `CANCELADO` em Atendimento e usei elas no lugar das strings |
+| clean06 | AgendaService.java e AtendimentoController.java, `@Autowired` direto no atributo | Injeção por campo esconde a dependência e deixa o atributo mutável | Troquei por injeção via construtor com atributo `final` (o Spring injeta pelo construtor e o `@InjectMocks` do teste também funciona) |
 
 ## Parte 3 — Testes novos (regras que estavam sem cobertura)
 
@@ -63,12 +67,12 @@
 
 | # | Teste escrito (classe.método) | Regra coberta | Resultado ao escrever (vermelho/verde) |
 |---|---|---|---|
-| teste01 | | | |
-| teste02 | | | |
-| teste03 | | | |
-| teste04 | | | |
-| teste05 | | | |
-| teste06 | | | |
+| teste01 | BanhoTest.deveCobrarPrecoDaTabelaQuandoPorteForPequenoMedioOuGrande | Preço do banho por porte: 60 / 80 / 100 | Vermelho, revelou o bug13 (preços invertidos) |
+| teste02 | TosaTest.deveDurar60MinutosQuandoForTosa | Tosa dura 60 minutos | Vermelho, revelou o bug14 (sobrecarga no lugar de sobrescrita) |
+| teste03 | BanhoTest.deveRecusarCancelamentoQuandoAtendimentoJaFoiConcluido | `cancelar()` em CONCLUIDO é recusado com StatusInvalidoException | Vermelho, revelou o bug15 (model cancelava qualquer status) |
+| teste04 | AgendaServiceTest.deveAgendarQuandoAtendimentoNoMesmoHorarioFoiCancelado | Só conflita com atendimento AGENDADO no mesmo horário | Vermelho, revelou o bug16 (cancelado bloqueava o horário) |
+| teste05 | ConsultaVeterinariaTest.deveCustar150ReaisQuandoQualquerPorte | Consulta custa R$ 150 fixo, o porte não muda o preço | Verde de cara, regra já estava correta |
+| teste06 | AgendaServiceTest.deveRecusarAgendamentoQuandoDataHoraEstaNoPassado | Data/hora no passado é recusada com IllegalArgumentException e o banco nem é consultado (`verify(..., never())`) | Verde de cara (a validação já tinha entrado no bug10) |
 
 ---
 
@@ -82,16 +86,48 @@ O projeto chegou com 20 testes, 9 vermelhos. Descreva como você usou as
 mensagens de falha (ex.: `expected: <Rex> but was: <null>`) para caçar os bugs.
 O que a suíte de testes tem de melhor do que testar tudo na mão com curl?
 
+A gente começou rodando a suíte inteira e indo um vermelho por vez. A mensagem já
+falava muito: no `deveMontarAtendimentoCompleto` veio `expected: <Rex> but was: <null>`,
+então o nome entrava no builder e sumia no meio do caminho. Abrindo o `comPet()` deu pra
+ver o `petNome = petNome` sem o `this`. No `deveCriarTosaQuandoTipoForTosa` a mensagem
+dizia que veio um Banho, aí foi direto no `case "TOSA"` da factory. Também vimos bug em
+cascata: o teste do protocolo só fez sentido depois de arrumar o singleton.
+A vantagem sobre o curl é que a suíte roda em segundos, sem Oracle e sem subir a API,
+e roda tudo de novo a cada correção. Foi assim que a gente percebeu, com o teste04, que
+a nossa correção do bug09 tinha quebrado a regra do atendimento cancelado. No curl isso
+passaria batido.
+
 ### 2. Mock e injeção de dependência (Aulas 13 a 15)
 No `AgendaServiceTest`, o `@Mock` cria um `AtendimentoRepository` falso e o
 `@InjectMocks` o injeta no service. Explique a relação disso com o `@Autowired`
 que o Spring faz em produção — quem "injeta" em cada mundo, e por que o teste
 consegue rodar sem banco e sem subir o Spring?
 
+O `AgendaService` não cria o próprio repository, ele recebe pronto. Em produção quem
+entrega é o container do Spring: ele cria a implementação do `AtendimentoRepository`
+(a do Spring Data, que fala com o Oracle) e passa para o service. Depois do clean06 isso
+acontece pelo construtor `AgendaService(AtendimentoRepository repository)`.
+No teste quem faz esse papel é o Mockito: o `@Mock` cria um repository falso, que só
+responde o que a gente ensina com `when(repository.findByPetNome("Rex")).thenReturn(...)`,
+e o `@InjectMocks` chama o mesmo construtor passando o falso. Como o service só conhece
+a interface, ele nem sabe que não tem banco. Por isso o teste roda sem Spring e sem rede,
+e ainda dá pra conferir com `verify(repository, never()).save(any())` que nada foi salvo.
+
 ### 3. `==` vs `.equals()` (Aula 7)
 Um dos bugs fazia o agendamento duplicado passar pela verificação de conflito.
 Explique por que `==` entre Strings e `LocalDateTime` falhou aqui, por que ele
 "funciona por sorte" com literais como `"Rex"`, e o que a sua correção mudou.
+
+O código original fazia `a.getPetNome() == novo.getPetNome() && a.getDataHora() == novo.getDataHora()`.
+O `==` em objeto compara referência, ou seja, se é o mesmo objeto na memória, e não se o
+conteúdo é igual. No `deveRecusarAgendamentoComHorarioJaOcupado` o teste cria o mesmo
+horário com `LocalDateTime.parse(...)`, que gera outro objeto, então o `==` dava false e
+o agendamento duplicado passava.
+Com `"Rex"` funciona por sorte porque literal de String vai para o String pool, e os dois
+`"Rex"` do código apontam para o mesmo objeto. Mas quando o nome vem de uma requisição
+HTTP é uma String nova, e aí o `==` falha igual. Na correção trocamos para
+`existente.getDataHora().isEqual(novo.getDataHora())`, que compara o valor da data. O nome
+nem precisa comparar, porque o `findByPetNome` já filtra pelo pet.
 
 ### 4. Sobrescrita vs sobrecarga (Aula 7)
 Um dos bugs compilava sem nenhum erro: um método parecia sobrescrever
@@ -99,16 +135,48 @@ Um dos bugs compilava sem nenhum erro: um método parecia sobrescrever
 diferença entre override e overload nesse caso e por que a anotação `@Override`
 teria impedido o bug.
 
+Na Tosa estava `public int getDuracaoMinutos(String porte)`. Sobrescrita (override) é quando
+a subclasse escreve um método com a mesma assinatura do pai, e aí o polimorfismo escolhe a
+versão da subclasse. Como esse tinha um parâmetro a mais, virou sobrecarga (overload): um
+método novo que convive com o `getDuracaoMinutos()` herdado de Atendimento.
+O controller chama `atendimento.getDuracaoMinutos()` pela referência abstrata, sem argumento,
+então executava o do pai e devolvia 30 em vez de 60. Compilava normal porque sobrecarga é
+válida. Se tivesse `@Override` em cima, o compilador ia dar erro dizendo que o método não
+sobrescreve nada, e o bug nem chegaria a rodar. No Banho tinha `@Override` e funcionava,
+foi comparando os dois que achamos (bug14).
+
 ### 5. Singleton manual vs bean do Spring (Aula 14)
 O `GeradorProtocolo` é um Singleton escrito à mão e causou um dos bugs.
 Explique o que ele garante, qual foi o bug, e por que o `AgendaService`
 (`@Service`) não corre o mesmo risco no container do Spring.
+
+O Singleton garante que existe uma única instância do `GeradorProtocolo`, então o `contador`
+é compartilhado e os protocolos saem 1, 2, 3... O construtor é privado e o acesso é só pelo
+`getInstancia()`. O bug era que o método fazia `return new GeradorProtocolo()` sem guardar
+em `instancia`, então ela continuava null e toda chamada criava um gerador novo com contador
+zerado. Todo atendimento ganhava protocolo 1 (dava pra ver o "GeradorProtocolo criado!"
+aparecendo várias vezes no console). A correção foi `instancia = new GeradorProtocolo()`.
+O `AgendaService` não tem esse risco porque quem cria ele é o container do Spring: bean
+anotado com `@Service` é singleton por padrão, o Spring cria uma vez na subida e injeta a
+mesma instância em todo mundo. A gente não escreve esse controle na mão, então não tem
+como esquecer de guardar a instância.
 
 ### 6. Cobertura de testes: onde parar? (Aula 15)
 Dos 6 testes novos que você escreveu, alguns ficaram vermelhos (revelaram
 bugs) e outros verdes de cara (regras já corretas). Vale a pena manter os que
 ficaram verdes? Em um projeto real com prazo, o que você priorizaria testar:
 caminho feliz, caminhos de erro, ou 100% de cobertura? Justifique.
+
+Vale manter. O teste05 (consulta a R$ 150 em qualquer porte) e o teste06 (data no passado
+sem consultar o banco) passaram de primeira, mas agora protegem a regra. Se alguém mexer no
+`agendar()` e colocar a validação depois do `findByPetNome`, o `verify(..., never())` pega na
+hora. E o nosso próprio teste04 mostrou isso: uma correção nossa tinha quebrado uma regra
+sem ninguém perceber.
+Com prazo, a gente priorizaria as regras de negócio e os caminhos de erro, mais do que 100%
+de cobertura. Quase todos os bugs daqui estavam em caminho de erro ou em regra de valor
+(conflito de horário, status, preço por porte), não no caminho feliz. Testar getter e setter
+só para subir a porcentagem gasta tempo e não pega nada. Primeiro as regras da tabela do
+contrato e as exceções, depois o caminho feliz principal de cada serviço.
 
 ---
 
@@ -117,5 +185,9 @@ caminho feliz, caminhos de erro, ou 100% de cobertura? Justifique.
 Alguma dificuldade, dúvida ou comentário sobre o checkpoint?
 
 ```
-
+A tabela da Parte 1 ficou com 16 linhas porque registramos tudo na ordem em que foi
+achado. Algumas correções se sobrepõem: o bug11 e o bug12 colocaram a validação de
+status no service, e depois o bug15 + clean04 levaram essa regra de volta para o model
+(Atendimento.concluir/cancelar), que é onde o enunciado diz que ela mora. O bug16 foi
+uma regressão da nossa própria correção do bug09, pega pelo teste04.
 ```
