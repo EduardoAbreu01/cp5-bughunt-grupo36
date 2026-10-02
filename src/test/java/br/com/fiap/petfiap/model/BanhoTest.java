@@ -1,10 +1,12 @@
 package br.com.fiap.petfiap.model;
 
+import br.com.fiap.petfiap.exception.StatusInvalidoException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 // Testes unitarios do model: sem banco, sem Spring (Aula 15).
 public class BanhoTest {
@@ -43,5 +45,16 @@ public class BanhoTest {
         assertEquals(60.0, pequeno.calcularPreco(), 0.001);
         assertEquals(80.0, medio.calcularPreco(), 0.001);
         assertEquals(100.0, grande.calcularPreco(), 0.001);
+    }
+
+    @Test
+    public void deveRecusarCancelamentoQuandoAtendimentoJaFoiConcluido() {
+        // Arrange
+        Banho banho = banhoDoRex();
+        banho.concluir();
+
+        // Act + Assert
+        assertThrows(StatusInvalidoException.class, banho::cancelar);
+        assertEquals("CONCLUIDO", banho.getStatus());
     }
 }
