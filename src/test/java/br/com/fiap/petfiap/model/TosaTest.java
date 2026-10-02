@@ -30,4 +30,16 @@ public class TosaTest {
         // Assert
         assertEquals(70.0, preco, 0.001);
     }
+
+    @Test
+    public void deveDurar60MinutosQuandoForTosa() {
+        // Arrange: usa o tipo abstrato, igual o controller faz no /resumo
+        Atendimento tosa = tosaDoRex();
+
+        // Act
+        int duracao = tosa.getDuracaoMinutos();
+
+        // Assert
+        assertEquals(60, duracao);
+    }
 }
